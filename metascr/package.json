@@ -1,5 +1,12 @@
 {
+  "name": "mi-app-metas",
+  "version": "1.0.0",
+  "description": "App de metas con Express",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^4.18.2"
   }
 }
