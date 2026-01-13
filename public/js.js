@@ -1,31 +1,29 @@
 window.addEventListener("load", () => {
-// ========= METAS =========
+  // ========= ELEMENTOS COMUNES Y DE INDEX =========
   const btnAgregar = document.getElementById("agregar");
   const overlay = document.getElementById("overlay");
   const inputMeta = document.getElementById("inpagr");
   const btnGuardar = document.getElementById("guardar");
-  const btnCancelar = document.getElementById("cancelar");
+  const btnCancelar = document.getElementById("cancelar"); // Movido arriba
   const contenedorMetas = document.getElementById("contenedor-metas");
 
-  const esIndex = btnAgregar && overlay && inputMeta && btnGuardar && btnCancelar && contenedorMetas;
+  // Elementos de Tiempo
+  const btnCalendario = document.getElementById("btnCalendario");
+  const btnCrono = document.getElementById("btncrono");
+  const btnTemporizador = document.getElementById("btnTemporizador");
+  const inputFecha = document.getElementById("inputFecha");
+  const divFecha = document.getElementById("fechaSeleccionada");
+
+  let modoTiempo = null;
+  let intervalo = null;
+  let inicio = null;
+  let fechaSeleccionada = null;
+
+  // Verificación de si estamos en el Index
+  const esIndex = btnAgregar && overlay && inputMeta && btnGuardar && contenedorMetas;
 
   if (esIndex) {
-    function guardarMetas() {
-      const metas = [];
-      document.querySelectorAll(".meta").forEach((el) => {
-        const titulo = el.querySelector(".meta__titulo").textContent;
-        const barraId = el.querySelector(".barra__progreso").id;
-        metas.push({ titulo, id: barraId });
-      });
-      localStorage.setItem("metas", JSON.stringify(metas));
-    }
-
     function crearMetaEnlace(texto, barraId) {
-      const link = document.createElement("a");
-      const nombreArchivo = "metas/" + texto.toLowerCase().replace(/\s+/g, '-') + ".html";
-      link.href = nombreArchivo;
-      link.style.textDecoration = "none";
-
       const divMeta = document.createElement("div");
       divMeta.className = "meta";
       divMeta.innerHTML = `
@@ -36,78 +34,64 @@ window.addEventListener("load", () => {
         <div class="submeta-eliminar">x</div>
       `;
 
+      divMeta.addEventListener("click", (e) => {
+        if (e.target.classList.contains('submeta-eliminar')) return;
+        window.location.href = `meta.html?id=${barraId}`;
+      });
+
       const btnEliminar = divMeta.querySelector(".submeta-eliminar");
       btnEliminar.addEventListener("click", (e) => {
-        e.preventDefault();
-        link.remove();
-
+        e.stopPropagation();
+        divMeta.remove();
         let metas = JSON.parse(localStorage.getItem("metas")) || [];
         metas = metas.filter(m => m.id !== barraId);
         localStorage.setItem("metas", JSON.stringify(metas));
+        localStorage.removeItem("progreso_" + barraId);
+        localStorage.removeItem("submetas_" + barraId);
       });
 
-      link.appendChild(divMeta);
-      contenedorMetas.appendChild(link);
+      contenedorMetas.appendChild(divMeta);
 
       const progreso = localStorage.getItem("progreso_" + barraId);
       if (progreso !== null) {
         const barra = divMeta.querySelector(".barra__progreso");
-        if (barra) {
-          barra.style.width = `${progreso}%`;
-          barra.querySelector("span").textContent = `${progreso}%`;
-        }
+        barra.style.width = `${progreso}%`;
+        barra.querySelector("span").textContent = `${progreso}%`;
       }
     }
 
     function cargarMetas() {
-      const metasGuardadas = JSON.parse(localStorage.getItem("metas")) || [];
-      metasGuardadas.forEach(({ titulo, id }) => {
-        crearMetaEnlace(titulo, id);
-      });
+      const metas = JSON.parse(localStorage.getItem("metas")) || [];
+      metas.forEach(m => crearMetaEnlace(m.titulo, m.id));
     }
 
-    btnAgregar.addEventListener("click", () => {
-      overlay.classList.remove("oculto");
-      inputMeta.focus();
-    });
+    btnGuardar.addEventListener("click", () => {
+      const texto = inputMeta.value.trim();
+      if (!texto) return; // Permitir guardar aunque no haya modoTiempo seleccionado
 
-    btnCancelar.addEventListener("click", () => {
+      const barraId = `barra${Date.now()}`;
+      const fechaValor = inputFecha ? inputFecha.value : null;
+
+      crearMetaEnlace(texto, barraId);
+
+      const metas = JSON.parse(localStorage.getItem("metas")) || [];
+      metas.push({ titulo: texto, id: barraId, modoTiempo, fecha: fechaValor });
+      localStorage.setItem("metas", JSON.stringify(metas));
+
       inputMeta.value = "";
       overlay.classList.add("oculto");
+      resetearTemporizador();
     });
 
-    btnGuardar.addEventListener("click", () => {
-  const texto = inputMeta.value.trim();
-  if (!texto || !modoTiempo) return;
-
-  const barraId = `barra${Date.now()}`;
-const fechaInput = inputFecha?.value || null;
-  fetch('/crear-meta', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ nombre: texto, id: barraId, modoTiempo, fecha: fechaInput })
-})
-.then(res => {
-    if (!res.ok) throw new Error("Error al crear meta");
-
-    crearMetaEnlace(texto, barraId);
-
-    const metas = JSON.parse(localStorage.getItem("metas")) || [];
-    metas.push({ titulo: texto, id: barraId });
-    localStorage.setItem("metas", JSON.stringify(metas));
-
-  }).catch(err => console.error(err));
-
-  inputMeta.value = "";
-  overlay.classList.add("oculto");
-});
-
+    if(btnCancelar) {
+        btnCancelar.addEventListener("click", () => {
+            overlay.classList.add("oculto");
+            resetearTemporizador();
+        });
+    }
 
     cargarMetas();
   }
-
-});
-
 
   // ========= SUBMETAS POR META =========
   const btnAgregarSub = document.getElementById("agrsubmeta");
@@ -120,24 +104,19 @@ body: JSON.stringify({ nombre: texto, id: barraId, modoTiempo, fecha: fechaInput
   const metaId = document.body.getAttribute("data-meta-id") || "default";
   const contenedorSubmetas = document.querySelector(`#contenedor-submetas${metaId}`);
 
-  if (
-    btnAgregarSub && overlaySub &&
-    inputSubmeta && inputDesc &&
-    btnGuardarSub && btnCancelarSub &&
-    contenedorSubmetas
-  ) {
+  if (btnAgregarSub && contenedorSubmetas) {
     function actualizarProgreso() {
       const checks = contenedorSubmetas.querySelectorAll(".submeta-check");
       const completados = contenedorSubmetas.querySelectorAll(".submeta-check:checked");
       const porcentaje = checks.length === 0 ? 0 : Math.round((completados.length / checks.length) * 100);
+      
       const barra = document.getElementById("barra" + metaId);
       if (barra) {
         barra.style.width = `${porcentaje}%`;
         barra.querySelector("span").textContent = `${porcentaje}%`;
       }
 
-     localStorage.setItem("progreso_" + metaId, porcentaje);
-
+      localStorage.setItem("progreso_" + metaId, porcentaje);
 
       const nombreMeta = document.querySelector(".meta__titulo")?.textContent || "Meta completada";
       let logros = JSON.parse(localStorage.getItem("logros")) || [];
@@ -145,24 +124,7 @@ body: JSON.stringify({ nombre: texto, id: barraId, modoTiempo, fecha: fechaInput
       if (porcentaje === 100 && !logros.includes(nombreMeta)) {
         logros.push(nombreMeta);
         localStorage.setItem("logros", JSON.stringify(logros));
-
-        const logro = document.createElement("div");
-        logro.className = "meta";
-        logro.setAttribute("data-logro", nombreMeta);
-        logro.innerHTML = `
-          <h1 class="meta__titulo">${nombreMeta}</h1>
-          <img class="imgIcono"
-            src="https://static.vecteezy.com/system/resources/thumbnails/013/209/450/small/laurel-wreath-a-symbol-of-the-winner-wheat-ears-or-rice-sign-silhouette-for-logo-apps-website-pictogram-art-illustration-or-graphic-design-element-format-in-png.png"
-            alt="">
-        `;
-        document.getElementById("contenedor-logros")?.appendChild(logro);
-      }
-
-      if (porcentaje < 100 && logros.includes(nombreMeta)) {
-        logros = logros.filter(m => m !== nombreMeta);
-        localStorage.setItem("logros", JSON.stringify(logros));
-
-        document.querySelectorAll(`[data-logro="${nombreMeta}"]`).forEach(el => el.remove());
+        // Aquí podrías disparar una función para renderizar el logro visualmente
       }
     }
 
@@ -178,10 +140,10 @@ body: JSON.stringify({ nombre: texto, id: barraId, modoTiempo, fecha: fechaInput
       `;
 
       const checkbox = submeta.querySelector(".submeta-check");
-      const tituloDiv = submeta.querySelector(".submeta-titulo") || submeta.querySelector(".submeta-titulocompl");
       const btnEliminar = submeta.querySelector(".submeta-eliminar");
 
       checkbox.addEventListener("change", () => {
+        const tituloDiv = submeta.querySelector("div");
         tituloDiv.className = checkbox.checked ? "submeta-titulocompl" : "submeta-titulo";
         guardarSubmetas();
         actualizarProgreso();
@@ -219,7 +181,7 @@ body: JSON.stringify({ nombre: texto, id: barraId, modoTiempo, fecha: fechaInput
       inputSubmeta.focus();
     });
 
-    btnCancelarSub.addEventListener("click", () => {
+    btnCancelarSub?.addEventListener("click", () => {
       inputSubmeta.value = "";
       inputDesc.value = "";
       overlaySub.classList.add("oculto");
@@ -239,61 +201,17 @@ body: JSON.stringify({ nombre: texto, id: barraId, modoTiempo, fecha: fechaInput
     cargarSubmetas();
   }
 
-// ========= ACTUALIZAR BARRAS EN INDEX AL CARGAR =========
-  const barras = document.querySelectorAll(".barra__progreso");
-  barras.forEach((barra) => {
-    const id = barra.id;
-    const progreso = localStorage.getItem("progreso_" + id);
-    if (progreso !== null) {
-      barra.style.width = `${progreso}%`;
-      barra.querySelector("span").textContent = `${progreso}%`;
-    }
-  });
-
-
-
-
-  // ========= CARGA DE LOGROS =========
-  {
-    const logros = JSON.parse(localStorage.getItem("logros")) || [];
-    const contenedor = document.getElementById("contenedor-logros");
-    if (contenedor && logros.length > 0) {
-      logros.forEach((nombreMeta) => {
-        const logro = document.createElement("div");
-        logro.className = "meta";
-        logro.setAttribute("data-logro", nombreMeta);
-        logro.innerHTML = `
-          <h1 class="meta__titulo">${nombreMeta}</h1>
-          <img class="imgIcono"
-            src="https://static.vecteezy.com/system/resources/thumbnails/013/209/450/small/laurel-wreath-a-symbol-of-the-winner-wheat-ears-or-rice-sign-silhouette-for-logo-apps-website-pictogram-art-illustration-or-graphic-design-element-format-in-png.png"
-            alt="">
-        `;
-        contenedor.appendChild(logro);
-      });
-    }
-  }
-
-  // ========= TEMPORIZADOR, CRONÓMETRO Y FECHA =========
-  const btnCalendario = document.getElementById("btnCalendario");
-  const btnCrono = document.getElementById("btncrono");
-  const btnTemporizador = document.getElementById("btnTemporizador");
-  const inputFecha = document.getElementById("inputFecha");
-  const divFecha = document.getElementById("fechaSeleccionada");
-  const guardar = document.getElementById("guardar");
-
-  let modoTiempo = null;
-  let intervalo = null;
-  let inicio = null;
-  let fechaSeleccionada = null;
-
+  // ========= FUNCIONES DE TIEMPO =========
   function resetearTemporizador() {
     clearInterval(intervalo);
     modoTiempo = null;
     inicio = null;
     fechaSeleccionada = null;
-    divFecha.textContent = "";
-    divFecha.classList.remove("tiempo");
-    inputFecha.value = "";
+    if (divFecha) {
+        divFecha.textContent = "";
+        divFecha.classList.remove("tiempo");
+    }
+    if (inputFecha) inputFecha.value = "";
   }
 
   btnCalendario?.addEventListener("click", () => {
@@ -305,8 +223,10 @@ body: JSON.stringify({ nombre: texto, id: barraId, modoTiempo, fecha: fechaInput
   btnCrono?.addEventListener("click", () => {
     resetearTemporizador();
     modoTiempo = "cronometro";
-    divFecha.textContent = "00:00:00";
-    divFecha.classList.add("tiempo");
+    if(divFecha) {
+        divFecha.textContent = "00:00:00";
+        divFecha.classList.add("tiempo");
+    }
   });
 
   btnTemporizador?.addEventListener("click", () => {
@@ -320,44 +240,19 @@ body: JSON.stringify({ nombre: texto, id: barraId, modoTiempo, fecha: fechaInput
     if (modoTiempo === "temporizador") {
       const ahora = new Date();
       if (seleccion <= ahora) {
-        fechaSeleccionada = null;
         divFecha.textContent = "Fecha inválida";
       } else {
         fechaSeleccionada = seleccion;
         actualizarTemporizador();
       }
-    } else {
+    } else if (divFecha) {
       divFecha.textContent = inputFecha.value;
     }
-    divFecha.classList.add("tiempo");
+    divFecha?.classList.add("tiempo");
   });
-
-  guardar?.addEventListener("click", () => {
-    clearInterval(intervalo);
-
-    if (modoTiempo === "cronometro") {
-      inicio = Date.now();
-      intervalo = setInterval(() => {
-        const ahora = Date.now();
-        const transcurrido = ahora - inicio;
-        const segundos = Math.floor(transcurrido / 1000) % 60;
-        const minutos = Math.floor(transcurrido / (1000 * 60)) % 60;
-        const horas = Math.floor(transcurrido / (1000 * 60 * 60));
-        divFecha.textContent = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-      }, 1000);
-    }
-
-    if (modoTiempo === "temporizador" && fechaSeleccionada) {
-      intervalo = setInterval(actualizarTemporizador, 1000);
-    }
-
-    // NO resetear aquí para no borrar lo iniciado
-    // resetearTemporizador();
-  });
-const btnCancelar = document.getElementById("cancelar");
-  btnCancelar?.addEventListener("click", resetearTemporizador);
 
   function actualizarTemporizador() {
+    if (!fechaSeleccionada || !divFecha) return;
     const ahora = new Date();
     const restante = fechaSeleccionada - ahora;
     if (restante <= 0) {
@@ -372,41 +267,19 @@ const btnCancelar = document.getElementById("cancelar");
     divFecha.textContent = `${dias} d ${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
   }
 
-
-
-  // === AUTO-INICIAR CRONÓMETRO O TEMPORIZADOR SI YA EXISTE EN LA PÁGINA ===
-const textoTiempo = document.getElementById("fechaSeleccionada");
-if (textoTiempo) {
-  const tipo = textoTiempo.getAttribute("data-tipo");
-
-  if (tipo === "cronometro") {
-    let inicio = Date.now();
-    setInterval(() => {
-      const ahora = Date.now();
-      const transcurrido = ahora - inicio;
-      const segundos = Math.floor(transcurrido / 1000) % 60;
-      const minutos = Math.floor(transcurrido / (1000 * 60)) % 60;
-      const horas = Math.floor(transcurrido / (1000 * 60 * 60));
-      textoTiempo.textContent = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-    }, 1000);
+  // Carga de Logros (Al final)
+  const contenedorLogros = document.getElementById("contenedor-logros");
+  if (contenedorLogros) {
+    const logros = JSON.parse(localStorage.getItem("logros")) || [];
+    logros.forEach((nombreMeta) => {
+        const logro = document.createElement("div");
+        logro.className = "meta";
+        logro.setAttribute("data-logro", nombreMeta);
+        logro.innerHTML = `
+          <h1 class="meta__titulo">${nombreMeta}</h1>
+          <img class="imgIcono" src="https://static.vecteezy.com/system/resources/thumbnails/013/209/450/small/laurel-wreath-a-symbol-of-the-winner-wheat-ears-or-rice-sign-silhouette-for-logo-apps-website-pictogram-art-illustration-or-graphic-design-element-format-in-png.png">
+        `;
+        contenedorLogros.appendChild(logro);
+    });
   }
-
-  if (tipo === "temporizador") {
-    const fechaFinal = new Date(textoTiempo.getAttribute("data-fecha"));
-    const actualizar = () => {
-      const ahora = new Date();
-      const restante = fechaFinal - ahora;
-      if (restante <= 0) {
-        textoTiempo.textContent = "¡Tiempo terminado!";
-        return;
-      }
-      const dias = Math.floor(restante / (1000 * 60 * 60 * 24));
-      const horas = Math.floor((restante / (1000 * 60 * 60)) % 24);
-      const minutos = Math.floor((restante / (1000 * 60)) % 60);
-      const segundos = Math.floor((restante / 1000) % 60);
-      textoTiempo.textContent = `${dias} d ${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-    };
-    actualizar();
-    setInterval(actualizar, 1000);
-  }
-}
+}); // Cierre correcto del window.addEventListener
