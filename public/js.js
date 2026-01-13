@@ -344,7 +344,7 @@ window.addEventListener("load", () => {
       // NO resetear aquí para no borrar lo iniciado
       // resetearTemporizador();
     });
-    const btnCancelar = document.getElementById("cancelar");
+
     btnCancelar?.addEventListener("click", resetearTemporizador);
 
     function actualizarTemporizador() {
@@ -402,3 +402,4 @@ window.addEventListener("load", () => {
     }
   }
 })
+
