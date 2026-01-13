@@ -1,5 +1,5 @@
 window.addEventListener("load", () => {
-// ========= METAS =========
+  // ========= METAS =========
   const btnAgregar = document.getElementById("agregar");
   const overlay = document.getElementById("overlay");
   const inputMeta = document.getElementById("inpagr");
@@ -77,89 +77,89 @@ window.addEventListener("load", () => {
     });
 
     btnGuardar.addEventListener("click", () => {
-  const texto = inputMeta.value.trim();
-  if (!texto || !modoTiempo) return;
+      const texto = inputMeta.value.trim();
+      if (!texto || !modoTiempo) return;
 
-  const barraId = `barra${Date.now()}`;
-const fechaInput = inputFecha?.value || null;
-  crearMetaEnlace(texto, barraId);
+      const barraId = `barra${Date.now()}`;
+      const fechaInput = inputFecha?.value || null;
+      crearMetaEnlace(texto, barraId);
 
-const metas = JSON.parse(localStorage.getItem("metas")) || [];
-metas.push({
-  titulo: texto,
-  id: barraId,
-  modoTiempo,
-  fecha: fechaInput
-});
-localStorage.setItem("metas", JSON.stringify(metas));
-
-
-
-    cargarMetas();
-  });
+      const metas = JSON.parse(localStorage.getItem("metas")) || [];
+      metas.push({
+        titulo: texto,
+        id: barraId,
+        modoTiempo,
+        fecha: fechaInput
+      });
+      localStorage.setItem("metas", JSON.stringify(metas));
 
 
-  // ========= SUBMETAS POR META =========
-  const btnAgregarSub = document.getElementById("agrsubmeta");
-  const overlaySub = document.getElementById("overlaySub");
-  const inputSubmeta = document.getElementById("inpSubmeta");
-  const inputDesc = document.getElementById("descripcion");
-  const btnGuardarSub = document.getElementById("guardarSub");
-  const btnCancelarSub = document.getElementById("cancelarSub");
 
-  const metaId = document.body.getAttribute("data-meta-id") || "default";
-  const contenedorSubmetas = document.querySelector(`#contenedor-submetas${metaId}`);
-
-  if (
-    btnAgregarSub && overlaySub &&
-    inputSubmeta && inputDesc &&
-    btnGuardarSub && btnCancelarSub &&
-    contenedorSubmetas
-  ) {
-    function actualizarProgreso() {
-      const checks = contenedorSubmetas.querySelectorAll(".submeta-check");
-      const completados = contenedorSubmetas.querySelectorAll(".submeta-check:checked");
-      const porcentaje = checks.length === 0 ? 0 : Math.round((completados.length / checks.length) * 100);
-      const barra = document.getElementById("barra" + metaId);
-      if (barra) {
-        barra.style.width = `${porcentaje}%`;
-        barra.querySelector("span").textContent = `${porcentaje}%`;
-      }
-
-     localStorage.setItem("progreso_" + metaId, porcentaje);
+      cargarMetas();
+    });
 
 
-      const nombreMeta = document.querySelector(".meta__titulo")?.textContent || "Meta completada";
-      let logros = JSON.parse(localStorage.getItem("logros")) || [];
+    // ========= SUBMETAS POR META =========
+    const btnAgregarSub = document.getElementById("agrsubmeta");
+    const overlaySub = document.getElementById("overlaySub");
+    const inputSubmeta = document.getElementById("inpSubmeta");
+    const inputDesc = document.getElementById("descripcion");
+    const btnGuardarSub = document.getElementById("guardarSub");
+    const btnCancelarSub = document.getElementById("cancelarSub");
 
-      if (porcentaje === 100 && !logros.includes(nombreMeta)) {
-        logros.push(nombreMeta);
-        localStorage.setItem("logros", JSON.stringify(logros));
+    const metaId = document.body.getAttribute("data-meta-id") || "default";
+    const contenedorSubmetas = document.querySelector(`#contenedor-submetas${metaId}`);
 
-        const logro = document.createElement("div");
-        logro.className = "meta";
-        logro.setAttribute("data-logro", nombreMeta);
-        logro.innerHTML = `
+    if (
+      btnAgregarSub && overlaySub &&
+      inputSubmeta && inputDesc &&
+      btnGuardarSub && btnCancelarSub &&
+      contenedorSubmetas
+    ) {
+      function actualizarProgreso() {
+        const checks = contenedorSubmetas.querySelectorAll(".submeta-check");
+        const completados = contenedorSubmetas.querySelectorAll(".submeta-check:checked");
+        const porcentaje = checks.length === 0 ? 0 : Math.round((completados.length / checks.length) * 100);
+        const barra = document.getElementById("barra" + metaId);
+        if (barra) {
+          barra.style.width = `${porcentaje}%`;
+          barra.querySelector("span").textContent = `${porcentaje}%`;
+        }
+
+        localStorage.setItem("progreso_" + metaId, porcentaje);
+
+
+        const nombreMeta = document.querySelector(".meta__titulo")?.textContent || "Meta completada";
+        let logros = JSON.parse(localStorage.getItem("logros")) || [];
+
+        if (porcentaje === 100 && !logros.includes(nombreMeta)) {
+          logros.push(nombreMeta);
+          localStorage.setItem("logros", JSON.stringify(logros));
+
+          const logro = document.createElement("div");
+          logro.className = "meta";
+          logro.setAttribute("data-logro", nombreMeta);
+          logro.innerHTML = `
           <h1 class="meta__titulo">${nombreMeta}</h1>
           <img class="imgIcono"
             src="https://static.vecteezy.com/system/resources/thumbnails/013/209/450/small/laurel-wreath-a-symbol-of-the-winner-wheat-ears-or-rice-sign-silhouette-for-logo-apps-website-pictogram-art-illustration-or-graphic-design-element-format-in-png.png"
             alt="">
         `;
-        document.getElementById("contenedor-logros")?.appendChild(logro);
+          document.getElementById("contenedor-logros")?.appendChild(logro);
+        }
+
+        if (porcentaje < 100 && logros.includes(nombreMeta)) {
+          logros = logros.filter(m => m !== nombreMeta);
+          localStorage.setItem("logros", JSON.stringify(logros));
+
+          document.querySelectorAll(`[data-logro="${nombreMeta}"]`).forEach(el => el.remove());
+        }
       }
 
-      if (porcentaje < 100 && logros.includes(nombreMeta)) {
-        logros = logros.filter(m => m !== nombreMeta);
-        localStorage.setItem("logros", JSON.stringify(logros));
-
-        document.querySelectorAll(`[data-logro="${nombreMeta}"]`).forEach(el => el.remove());
-      }
-    }
-
-    function crearSubmeta(titulo, descripcion, completado = false) {
-      const submeta = document.createElement("div");
-      submeta.className = "submeta";
-      submeta.innerHTML = `
+      function crearSubmeta(titulo, descripcion, completado = false) {
+        const submeta = document.createElement("div");
+        submeta.className = "submeta";
+        submeta.innerHTML = `
         <input class="submeta-check" type="checkbox" ${completado ? "checked" : ""}>
         <div class="${completado ? "submeta-titulocompl" : "submeta-titulo"}">
           <span>${titulo}</span>
@@ -167,236 +167,238 @@ localStorage.setItem("metas", JSON.stringify(metas));
         <div class="submeta-eliminar">x</div>
       `;
 
-      const checkbox = submeta.querySelector(".submeta-check");
-      const tituloDiv = submeta.querySelector(".submeta-titulo") || submeta.querySelector(".submeta-titulocompl");
-      const btnEliminar = submeta.querySelector(".submeta-eliminar");
+        const checkbox = submeta.querySelector(".submeta-check");
+        const tituloDiv = submeta.querySelector(".submeta-titulo") || submeta.querySelector(".submeta-titulocompl");
+        const btnEliminar = submeta.querySelector(".submeta-eliminar");
 
-      checkbox.addEventListener("change", () => {
-        tituloDiv.className = checkbox.checked ? "submeta-titulocompl" : "submeta-titulo";
+        checkbox.addEventListener("change", () => {
+          tituloDiv.className = checkbox.checked ? "submeta-titulocompl" : "submeta-titulo";
+          guardarSubmetas();
+          actualizarProgreso();
+        });
+
+        btnEliminar.addEventListener("click", () => {
+          submeta.remove();
+          guardarSubmetas();
+          actualizarProgreso();
+        });
+
+        contenedorSubmetas.appendChild(submeta);
+      }
+
+      function guardarSubmetas() {
+        const submetas = [];
+        contenedorSubmetas.querySelectorAll(".submeta").forEach((el) => {
+          const titulo = el.querySelector("span").textContent;
+          const completado = el.querySelector(".submeta-check").checked;
+          submetas.push({ titulo, completado });
+        });
+        localStorage.setItem("submetas_" + metaId, JSON.stringify(submetas));
+      }
+
+      function cargarSubmetas() {
+        const datos = JSON.parse(localStorage.getItem("submetas_" + metaId)) || [];
+        datos.forEach(({ titulo, completado }) => {
+          crearSubmeta(titulo, "", completado);
+        });
+        actualizarProgreso();
+      }
+
+      btnAgregarSub.addEventListener("click", () => {
+        overlaySub.classList.remove("oculto");
+        inputSubmeta.focus();
+      });
+
+      btnCancelarSub.addEventListener("click", () => {
+        inputSubmeta.value = "";
+        inputDesc.value = "";
+        overlaySub.classList.add("oculto");
+      });
+
+      btnGuardarSub.addEventListener("click", () => {
+        const titulo = inputSubmeta.value.trim();
+        if (!titulo) return;
+        crearSubmeta(titulo, inputDesc.value.trim(), false);
         guardarSubmetas();
         actualizarProgreso();
+        inputSubmeta.value = "";
+        inputDesc.value = "";
+        overlaySub.classList.add("oculto");
       });
 
-      btnEliminar.addEventListener("click", () => {
-        submeta.remove();
-        guardarSubmetas();
-        actualizarProgreso();
-      });
-
-      contenedorSubmetas.appendChild(submeta);
+      cargarSubmetas();
     }
 
-    function guardarSubmetas() {
-      const submetas = [];
-      contenedorSubmetas.querySelectorAll(".submeta").forEach((el) => {
-        const titulo = el.querySelector("span").textContent;
-        const completado = el.querySelector(".submeta-check").checked;
-        submetas.push({ titulo, completado });
-      });
-      localStorage.setItem("submetas_" + metaId, JSON.stringify(submetas));
-    }
-
-    function cargarSubmetas() {
-      const datos = JSON.parse(localStorage.getItem("submetas_" + metaId)) || [];
-      datos.forEach(({ titulo, completado }) => {
-        crearSubmeta(titulo, "", completado);
-      });
-      actualizarProgreso();
-    }
-
-    btnAgregarSub.addEventListener("click", () => {
-      overlaySub.classList.remove("oculto");
-      inputSubmeta.focus();
+    // ========= ACTUALIZAR BARRAS EN INDEX AL CARGAR =========
+    const barras = document.querySelectorAll(".barra__progreso");
+    barras.forEach((barra) => {
+      const id = barra.id;
+      const progreso = localStorage.getItem("progreso_" + id);
+      if (progreso !== null) {
+        barra.style.width = `${progreso}%`;
+        barra.querySelector("span").textContent = `${progreso}%`;
+      }
     });
 
-    btnCancelarSub.addEventListener("click", () => {
-      inputSubmeta.value = "";
-      inputDesc.value = "";
-      overlaySub.classList.add("oculto");
-    });
-
-    btnGuardarSub.addEventListener("click", () => {
-      const titulo = inputSubmeta.value.trim();
-      if (!titulo) return;
-      crearSubmeta(titulo, inputDesc.value.trim(), false);
-      guardarSubmetas();
-      actualizarProgreso();
-      inputSubmeta.value = "";
-      inputDesc.value = "";
-      overlaySub.classList.add("oculto");
-    });
-
-    cargarSubmetas();
-  }
-
-// ========= ACTUALIZAR BARRAS EN INDEX AL CARGAR =========
-  const barras = document.querySelectorAll(".barra__progreso");
-  barras.forEach((barra) => {
-    const id = barra.id;
-    const progreso = localStorage.getItem("progreso_" + id);
-    if (progreso !== null) {
-      barra.style.width = `${progreso}%`;
-      barra.querySelector("span").textContent = `${progreso}%`;
-    }
-  });
 
 
 
-
-  // ========= CARGA DE LOGROS =========
-  {
-    const logros = JSON.parse(localStorage.getItem("logros")) || [];
-    const contenedor = document.getElementById("contenedor-logros");
-    if (contenedor && logros.length > 0) {
-      logros.forEach((nombreMeta) => {
-        const logro = document.createElement("div");
-        logro.className = "meta";
-        logro.setAttribute("data-logro", nombreMeta);
-        logro.innerHTML = `
+    // ========= CARGA DE LOGROS =========
+    {
+      const logros = JSON.parse(localStorage.getItem("logros")) || [];
+      const contenedor = document.getElementById("contenedor-logros");
+      if (contenedor && logros.length > 0) {
+        logros.forEach((nombreMeta) => {
+          const logro = document.createElement("div");
+          logro.className = "meta";
+          logro.setAttribute("data-logro", nombreMeta);
+          logro.innerHTML = `
           <h1 class="meta__titulo">${nombreMeta}</h1>
           <img class="imgIcono"
             src="https://static.vecteezy.com/system/resources/thumbnails/013/209/450/small/laurel-wreath-a-symbol-of-the-winner-wheat-ears-or-rice-sign-silhouette-for-logo-apps-website-pictogram-art-illustration-or-graphic-design-element-format-in-png.png"
             alt="">
         `;
-        contenedor.appendChild(logro);
-      });
-    }
-  }
-
-  // ========= TEMPORIZADOR, CRONÓMETRO Y FECHA =========
-  const btnCalendario = document.getElementById("btnCalendario");
-  const btnCrono = document.getElementById("btncrono");
-  const btnTemporizador = document.getElementById("btnTemporizador");
-  const inputFecha = document.getElementById("inputFecha");
-  const divFecha = document.getElementById("fechaSeleccionada");
-  const guardar = document.getElementById("guardar");
-
-  let modoTiempo = null;
-  let intervalo = null;
-  let inicio = null;
-  let fechaSeleccionada = null;
-
-  function resetearTemporizador() {
-    clearInterval(intervalo);
-    modoTiempo = null;
-    inicio = null;
-    fechaSeleccionada = null;
-    divFecha.textContent = "";
-    divFecha.classList.remove("tiempo");
-    inputFecha.value = "";
-  }
-
-  btnCalendario?.addEventListener("click", () => {
-    resetearTemporizador();
-    modoTiempo = "fecha";
-    inputFecha?.showPicker?.() || inputFecha?.click();
-  });
-
-  btnCrono?.addEventListener("click", () => {
-    resetearTemporizador();
-    modoTiempo = "cronometro";
-    divFecha.textContent = "00:00:00";
-    divFecha.classList.add("tiempo");
-  });
-
-  btnTemporizador?.addEventListener("click", () => {
-    resetearTemporizador();
-    modoTiempo = "temporizador";
-    inputFecha?.showPicker?.() || inputFecha?.click();
-  });
-
-  inputFecha?.addEventListener("change", () => {
-    const seleccion = new Date(inputFecha.value);
-    if (modoTiempo === "temporizador") {
-      const ahora = new Date();
-      if (seleccion <= ahora) {
-        fechaSeleccionada = null;
-        divFecha.textContent = "Fecha inválida";
-      } else {
-        fechaSeleccionada = seleccion;
-        actualizarTemporizador();
+          contenedor.appendChild(logro);
+        });
       }
-    } else {
-      divFecha.textContent = inputFecha.value;
-    }
-    divFecha.classList.add("tiempo");
-  });
-
-  guardar?.addEventListener("click", () => {
-    clearInterval(intervalo);
-
-    if (modoTiempo === "cronometro") {
-      inicio = Date.now();
-      intervalo = setInterval(() => {
-        const ahora = Date.now();
-        const transcurrido = ahora - inicio;
-        const segundos = Math.floor(transcurrido / 1000) % 60;
-        const minutos = Math.floor(transcurrido / (1000 * 60)) % 60;
-        const horas = Math.floor(transcurrido / (1000 * 60 * 60));
-        divFecha.textContent = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-      }, 1000);
     }
 
-    if (modoTiempo === "temporizador" && fechaSeleccionada) {
-      intervalo = setInterval(actualizarTemporizador, 1000);
-    }
+    // ========= TEMPORIZADOR, CRONÓMETRO Y FECHA =========
+    const btnCalendario = document.getElementById("btnCalendario");
+    const btnCrono = document.getElementById("btncrono");
+    const btnTemporizador = document.getElementById("btnTemporizador");
+    const inputFecha = document.getElementById("inputFecha");
+    const divFecha = document.getElementById("fechaSeleccionada");
+    const guardar = document.getElementById("guardar");
 
-    // NO resetear aquí para no borrar lo iniciado
-    // resetearTemporizador();
-  });
-const btnCancelar = document.getElementById("cancelar");
-  btnCancelar?.addEventListener("click", resetearTemporizador);
+    let modoTiempo = null;
+    let intervalo = null;
+    let inicio = null;
+    let fechaSeleccionada = null;
 
-  function actualizarTemporizador() {
-    const ahora = new Date();
-    const restante = fechaSeleccionada - ahora;
-    if (restante <= 0) {
+    function resetearTemporizador() {
       clearInterval(intervalo);
-      divFecha.textContent = "¡Tiempo terminado!";
-      return;
+      modoTiempo = null;
+      inicio = null;
+      fechaSeleccionada = null;
+      divFecha.textContent = "";
+      divFecha.classList.remove("tiempo");
+      inputFecha.value = "";
     }
-    const dias = Math.floor(restante / (1000 * 60 * 60 * 24));
-    const horas = Math.floor((restante / (1000 * 60 * 60)) % 24);
-    const minutos = Math.floor((restante / (1000 * 60)) % 60);
-    const segundos = Math.floor((restante / 1000) % 60);
-    divFecha.textContent = `${dias} d ${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-  }
 
+    btnCalendario?.addEventListener("click", () => {
+      resetearTemporizador();
+      modoTiempo = "fecha";
+      inputFecha?.showPicker?.() || inputFecha?.click();
+    });
 
+    btnCrono?.addEventListener("click", () => {
+      resetearTemporizador();
+      modoTiempo = "cronometro";
+      divFecha.textContent = "00:00:00";
+      divFecha.classList.add("tiempo");
+    });
 
-  // === AUTO-INICIAR CRONÓMETRO O TEMPORIZADOR SI YA EXISTE EN LA PÁGINA ===
-const textoTiempo = document.getElementById("fechaSeleccionada");
-if (textoTiempo) {
-  const tipo = textoTiempo.getAttribute("data-tipo");
+    btnTemporizador?.addEventListener("click", () => {
+      resetearTemporizador();
+      modoTiempo = "temporizador";
+      inputFecha?.showPicker?.() || inputFecha?.click();
+    });
 
-  if (tipo === "cronometro") {
-    let inicio = Date.now();
-    setInterval(() => {
-      const ahora = Date.now();
-      const transcurrido = ahora - inicio;
-      const segundos = Math.floor(transcurrido / 1000) % 60;
-      const minutos = Math.floor(transcurrido / (1000 * 60)) % 60;
-      const horas = Math.floor(transcurrido / (1000 * 60 * 60));
-      textoTiempo.textContent = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-    }, 1000);
-  }
+    inputFecha?.addEventListener("change", () => {
+      const seleccion = new Date(inputFecha.value);
+      if (modoTiempo === "temporizador") {
+        const ahora = new Date();
+        if (seleccion <= ahora) {
+          fechaSeleccionada = null;
+          divFecha.textContent = "Fecha inválida";
+        } else {
+          fechaSeleccionada = seleccion;
+          actualizarTemporizador();
+        }
+      } else {
+        divFecha.textContent = inputFecha.value;
+      }
+      divFecha.classList.add("tiempo");
+    });
 
-  if (tipo === "temporizador") {
-    const fechaFinal = new Date(textoTiempo.getAttribute("data-fecha"));
-    const actualizar = () => {
+    guardar?.addEventListener("click", () => {
+      clearInterval(intervalo);
+
+      if (modoTiempo === "cronometro") {
+        inicio = Date.now();
+        intervalo = setInterval(() => {
+          const ahora = Date.now();
+          const transcurrido = ahora - inicio;
+          const segundos = Math.floor(transcurrido / 1000) % 60;
+          const minutos = Math.floor(transcurrido / (1000 * 60)) % 60;
+          const horas = Math.floor(transcurrido / (1000 * 60 * 60));
+          divFecha.textContent = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+        }, 1000);
+      }
+
+      if (modoTiempo === "temporizador" && fechaSeleccionada) {
+        intervalo = setInterval(actualizarTemporizador, 1000);
+      }
+
+      // NO resetear aquí para no borrar lo iniciado
+      // resetearTemporizador();
+    });
+    const btnCancelar = document.getElementById("cancelar");
+    btnCancelar?.addEventListener("click", resetearTemporizador);
+
+    function actualizarTemporizador() {
       const ahora = new Date();
-      const restante = fechaFinal - ahora;
+      const restante = fechaSeleccionada - ahora;
       if (restante <= 0) {
-        textoTiempo.textContent = "¡Tiempo terminado!";
+        clearInterval(intervalo);
+        divFecha.textContent = "¡Tiempo terminado!";
         return;
       }
       const dias = Math.floor(restante / (1000 * 60 * 60 * 24));
       const horas = Math.floor((restante / (1000 * 60 * 60)) % 24);
       const minutos = Math.floor((restante / (1000 * 60)) % 60);
       const segundos = Math.floor((restante / 1000) % 60);
-      textoTiempo.textContent = `${dias} d ${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-    };
-    actualizar();
-    setInterval(actualizar, 1000);
+      divFecha.textContent = `${dias} d ${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+    }
+
+
+
+    // === AUTO-INICIAR CRONÓMETRO O TEMPORIZADOR SI YA EXISTE EN LA PÁGINA ===
+    const textoTiempo = document.getElementById("fechaSeleccionada");
+    if (textoTiempo) {
+      const tipo = textoTiempo.getAttribute("data-tipo");
+
+      if (tipo === "cronometro") {
+        let inicio = Date.now();
+        setInterval(() => {
+          const ahora = Date.now();
+          const transcurrido = ahora - inicio;
+          const segundos = Math.floor(transcurrido / 1000) % 60;
+          const minutos = Math.floor(transcurrido / (1000 * 60)) % 60;
+          const horas = Math.floor(transcurrido / (1000 * 60 * 60));
+          textoTiempo.textContent = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+        }, 1000);
+      }
+
+      if (tipo === "temporizador") {
+        const fechaFinal = new Date(textoTiempo.getAttribute("data-fecha"));
+        const actualizar = () => {
+          const ahora = new Date();
+          const restante = fechaFinal - ahora;
+          if (restante <= 0) {
+            textoTiempo.textContent = "¡Tiempo terminado!";
+            return;
+          }
+          const dias = Math.floor(restante / (1000 * 60 * 60 * 24));
+          const horas = Math.floor((restante / (1000 * 60 * 60)) % 24);
+          const minutos = Math.floor((restante / (1000 * 60)) % 60);
+          const segundos = Math.floor((restante / 1000) % 60);
+          textoTiempo.textContent = `${dias} d ${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+        };
+        actualizar();
+        setInterval(actualizar, 1000);
+      }
+    }
   }
-}
+})
